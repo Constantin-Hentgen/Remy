@@ -27,9 +27,9 @@ server = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Constantin-Hentgen/remy"
-Documentation = "https://github.com/Constantin-Hentgen/remy/wiki"
-Changelog = "https://github.com/Constantin-Hentgen/remy/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Constantin-Hentgen/Remy"
+Documentation = "https://github.com/Constantin-Hentgen/Remy/wiki"
+Changelog = "https://github.com/Constantin-Hentgen/Remy/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
