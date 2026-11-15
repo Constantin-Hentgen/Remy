@@ -23,14 +23,14 @@ jobs:
 
       # release-please cannot edit uv.lock: sync it with the new version on the open release branch,
       # then dispatch CI there, since pull requests opened with GITHUB_TOKEN do not trigger it.
-      - name: Find the open release pull request
+      # The branch comes from the action's `pr` output (set when this run created or updated the release PR):
+      # searching for it with `gh pr list --label` races GitHub's search index and finds nothing.
+      - name: Find the release pull request branch
         id: pr
+        if: ${{ steps.release.outputs.pr != '' }}
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          branch=$(gh pr list -R "${{ github.repository }}" --state open --label "autorelease: pending" \
-            --json headRefName -q '.[0].headRefName')
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          PR_JSON: ${{ steps.release.outputs.pr }}
+        run: echo "branch=$(jq -r '.headBranchName' <<<"$PR_JSON")" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         if: ${{ steps.pr.outputs.branch != '' }}
         with:
