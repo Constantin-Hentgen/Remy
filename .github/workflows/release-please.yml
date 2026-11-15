@@ -21,8 +21,10 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      # release-please cannot edit uv.lock: sync it with the new version on the open release branch,
-      # then dispatch CI there, since pull requests opened with GITHUB_TOKEN do not trigger it.
+      # release-please cannot edit uv.lock: sync it with the new version on the open release branch.
+      # Then approve CI there: GitHub holds pull_request runs on PRs opened by github-actions for approval
+      # ("action_required"), and without them the required checks never report on the release PR
+      # (checks from a workflow_dispatch run do not count for a PR).
       # The branch comes from the action's `pr` output (set when this run created or updated the release PR):
       # searching for it with `gh pr list --label` races GitHub's search index and finds nothing.
       - name: Find the release pull request branch
@@ -47,8 +49,23 @@ jobs:
             git commit -am "chore: sync uv.lock with the release version"
             git push
           fi
-      - name: Run CI on the release branch
+      - name: Approve CI on the release pull request
         if: ${{ steps.pr.outputs.branch != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml -R "${{ github.repository }}" --ref "${{ steps.pr.outputs.branch }}"
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
+        run: |
+          head=$(git rev-parse HEAD)
+          # The run for the head commit appears a few seconds after the push.
+          for i in $(seq 1 24); do
+            ids=$(gh run list -R "$REPO" --branch "$BRANCH" --event pull_request --status action_required \
+              --json databaseId,headSha -q ".[] | select(.headSha == \"$head\") | .databaseId")
+            [ -n "$ids" ] && break
+            sleep 5
+          done
+          if [ -z "$ids" ]; then
+            echo "::warning::No held CI run found for $head on $BRANCH; approve it from the Actions tab."
+            exit 0
+          fi
+          for id in $ids; do gh api -X POST "repos/$REPO/actions/runs/$id/approve"; done
