@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Release pull requests are opened with GITHUB_TOKEN, which does not trigger pull_request workflows:
+  # the release-please workflow dispatches this one on the release branch instead.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Lint
+        run: uv run --frozen ruff check
+      - name: Check formatting
+        run: uv run --frozen ruff format --check
+      - name: Run tests
+        run: uv run --frozen python -m pytest -q
+
+  docker:
+    name: docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image and probe /health
+        run: |
+          docker build -t kcalibre:ci .
+          docker run -d --name kcalibre -p 8000:8000 kcalibre:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health && exit 0
+            sleep 1
+          done
+          docker logs kcalibre
+          exit 1

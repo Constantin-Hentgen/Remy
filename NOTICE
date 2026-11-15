@@ -1,0 +1,18 @@
+kcalibre
+Copyright (c) 2026 Constantin. Released under the MIT licence (see LICENSE).
+
+The code is MIT-licensed. Datasets bundled with or fetched by kcalibre keep their own licences:
+
+Ciqual 2020 food composition table
+  Source: ANSES, "Table de composition nutritionnelle des aliments Ciqual 2020"
+          https://ciqual.anses.fr/ — https://www.data.gouv.fr/fr/datasets/table-de-composition-nutritionnelle-des-aliments-ciqual/
+  Licence: Licence Ouverte / Open Licence version 2.0 (Etalab), https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+  Redistribution and reuse are allowed provided the source is credited. kcalibre embeds a reduced extract
+  (energy, protein, carbohydrates, fat, sugars, fibre, salt per 100 g); the values are ANSES's, the extract
+  format is kcalibre's.
+
+Open Food Facts (planned, not bundled yet)
+  Source: Open Food Facts contributors, https://world.openfoodfacts.org/
+  Licence: Open Database License (ODbL) 1.0, https://opendatacommons.org/licenses/odbl/1-0/ ;
+  individual contents under the Database Contents License 1.0; product images under CC BY-SA 3.0.
+  Any cached extract is a derivative database and stays under ODbL.

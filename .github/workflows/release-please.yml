@@ -1,0 +1,54 @@
+name: release-please
+
+# Conventional Commits on main open or update a release pull request (version + CHANGELOG.md);
+# merging it creates the vX.Y.Z tag and the GitHub release.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # release-please cannot edit uv.lock: sync it with the new version on the open release branch,
+      # then dispatch CI there, since pull requests opened with GITHUB_TOKEN do not trigger it.
+      - name: Find the open release pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch=$(gh pr list -R "${{ github.repository }}" --state open --label "autorelease: pending" \
+            --json headRefName -q '.[0].headRefName')
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: ${{ steps.pr.outputs.branch != '' }}
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+      - uses: astral-sh/setup-uv@v6
+        if: ${{ steps.pr.outputs.branch != '' }}
+      - name: Sync uv.lock with the release version
+        if: ${{ steps.pr.outputs.branch != '' }}
+        run: |
+          uv lock
+          if ! git diff --quiet uv.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "chore: sync uv.lock with the release version"
+            git push
+          fi
+      - name: Run CI on the release branch
+        if: ${{ steps.pr.outputs.branch != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml -R "${{ github.repository }}" --ref "${{ steps.pr.outputs.branch }}"
