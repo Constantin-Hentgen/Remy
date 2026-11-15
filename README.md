@@ -13,7 +13,7 @@ It is **deterministic: there is no LLM inside.** Clients, such as a chat bot, tu
 
 Use it as a **Python library** (the pure computation core) or as an **HTTP service** (FastAPI, SQLite by default).
 
-> Status: early development. The API is being built; see the [project board](https://github.com/users/Constantin-Hentgen/projects/9).
+> Status: early development. The API is being built; see the [project board](https://github.com/users/Constantin-Hentgen/projects/15).
 
 ## Quick start
 
