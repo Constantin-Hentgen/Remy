@@ -23,6 +23,10 @@ class Settings(BaseSettings):
         default=None,
         description="Bearer key with admin rights (creating users and their API keys). Unset: no admin access.",
     )
+    remy_auto_migrate: bool = Field(
+        default=True,
+        description="Apply database migrations at startup. Turn off to run `remy db upgrade` yourself.",
+    )
     log_level: str = Field(default="INFO", description="Python logging level: DEBUG, INFO, WARNING, ERROR.")
 
 

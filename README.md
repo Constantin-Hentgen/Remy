@@ -13,7 +13,7 @@ It is **deterministic: there is no LLM inside.** Clients, such as a chat bot, tu
 
 Use it as a **Python library** (the pure computation core) or as an **HTTP service** (FastAPI, SQLite by default).
 
-> Status: early development. The API is being built; see the [project board](https://github.com/users/Constantin-Hentgen/projects/15).
+> Status: early development; see the [project board](https://github.com/users/Constantin-Hentgen/projects/15).
 
 ## Quick start
 
@@ -21,7 +21,14 @@ Use it as a **Python library** (the pure computation core) or as an **HTTP servi
 cp .env.example .env          # optional: every variable has a default
 docker compose up -d
 curl http://localhost:18100/health
+
+# create a user; the API key is printed once
+docker compose exec remy remy user create alice --timezone Europe/Paris
+
+curl -H "Authorization: Bearer $KEY" "http://localhost:18100/v1/foods?q=riz+blanc+cuit"
 ```
+
+Interactive API docs are served at `/docs`.
 
 For development:
 

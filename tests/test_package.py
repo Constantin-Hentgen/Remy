@@ -14,6 +14,9 @@ def test_version_is_a_string():
 
 
 def test_library_import_is_light():
-    code = f"import sys, remy; print(','.join(m for m in sys.modules if m.split('.')[0] in {HEAVY!r}))"
+    code = (
+        "import sys, remy, remy.schemas, remy.summary; "
+        f"print(','.join(m for m in sys.modules if m.split('.')[0] in {HEAVY!r}))"
+    )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout.strip()
     assert out == ""

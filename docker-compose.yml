@@ -10,6 +10,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-sqlite:////data/remy.db}
       REMY_ADMIN_KEY: ${REMY_ADMIN_KEY:-}
+      REMY_AUTO_MIGRATE: ${REMY_AUTO_MIGRATE:-}
       LOG_LEVEL: ${LOG_LEVEL:-}
     ports:
       - "${REMY_PORT:-18100}:8000"

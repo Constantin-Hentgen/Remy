@@ -22,7 +22,7 @@ def client():
 def test_health(client):
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "version": __version__}
+    assert r.json() == {"status": "ok", "version": __version__, "database": "ok"}
 
 
 def test_openapi_is_served(client):
@@ -39,7 +39,8 @@ def test_requests_are_logged_without_query_string(client, caplog):
 
 def test_uvicorn_access_log_is_disabled():
     # uvicorn's access log prints query strings, which can carry health data; the middleware logs instead.
-    assert "--no-access-log" in (ROOT / "Dockerfile").read_text()
+    assert 'CMD ["remy", "serve"]' in (ROOT / "Dockerfile").read_text()
+    assert "access_log=False" in (ROOT / "src" / "remy" / "cli.py").read_text()
 
 
 def test_empty_env_vars_fall_back_to_defaults(monkeypatch):
