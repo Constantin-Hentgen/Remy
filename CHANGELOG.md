@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.1.0...v0.2.0) (2026-11-15)
+
+
+### Added
+
+* **core:** nutrition core library ported from Bob ([eb39f16](https://github.com/Constantin-Hentgen/Remy/commit/eb39f1662552693252a237f6639486dd1ef55c68))
+
 ## 0.1.0 (2026-11-15)
 
 
