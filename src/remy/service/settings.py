@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
     database_url: str = Field(
-        default="sqlite:///./data/kcalibre.db",
+        default="sqlite:///./data/remy.db",
         description="SQLAlchemy URL. SQLite file by default; a postgresql+psycopg:// URL also works.",
     )
-    kcalibre_admin_key: SecretStr | None = Field(
+    remy_admin_key: SecretStr | None = Field(
         default=None,
         description="Bearer key with admin rights (creating users and their API keys). Unset: no admin access.",
     )

@@ -1,4 +1,4 @@
-"""FastAPI application factory, served with ``uvicorn kcalibre.service.app:create_app --factory``."""
+"""FastAPI application factory, served with ``uvicorn remy.service.app:create_app --factory``."""
 
 import logging
 import time
@@ -6,11 +6,11 @@ from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Request, Response
 
-from kcalibre import __version__
-from kcalibre.service import logging as service_logging
-from kcalibre.service.settings import Settings, get_settings
+from remy import __version__
+from remy.service import logging as service_logging
+from remy.service.settings import Settings, get_settings
 
-logger = logging.getLogger("kcalibre")
+logger = logging.getLogger("remy")
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -18,7 +18,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     service_logging.configure(settings.log_level)
     app = FastAPI(
-        title="kcalibre",
+        title="Remy",
         version=__version__,
         summary="Nutrition tracking for endurance athletes: food lookup, meal log, energy balance against training.",
     )
@@ -37,5 +37,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """Liveness probe for Docker and Portainer."""
         return {"status": "ok", "version": __version__}
 
-    logger.info("kcalibre %s ready", __version__)
+    logger.info("Remy %s ready", __version__)
     return app

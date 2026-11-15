@@ -1,12 +1,12 @@
 [project]
-name = "kcalibre"
+name = "remy"
 version = "0.0.0"
 description = "Self-hosted nutrition tracking for endurance athletes: food lookup, meal log and energy balance against training."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.13"
-authors = [{ name = "kcalibre contributors" }]
+authors = [{ name = "Remy contributors" }]
 keywords = ["nutrition", "ciqual", "endurance", "running", "energy-balance", "fastapi"]
 classifiers = [
     "Programming Language :: Python :: 3.13",
@@ -27,13 +27,13 @@ server = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Constantin-Hentgen/kcalibre"
-Documentation = "https://github.com/Constantin-Hentgen/kcalibre/wiki"
-Changelog = "https://github.com/Constantin-Hentgen/kcalibre/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Constantin-Hentgen/remy"
+Documentation = "https://github.com/Constantin-Hentgen/remy/wiki"
+Changelog = "https://github.com/Constantin-Hentgen/remy/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
-    "kcalibre[server]",
+    "remy[server]",
     "httpx>=0.27",
     "pytest>=8.3",
     "ruff>=0.8",
@@ -44,7 +44,7 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/kcalibre"]
+packages = ["src/remy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

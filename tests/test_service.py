@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from kcalibre import __version__
-from kcalibre.service.app import create_app
-from kcalibre.service.settings import Settings, get_settings
+from remy import __version__
+from remy.service.app import create_app
+from remy.service.settings import Settings, get_settings
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -26,13 +26,13 @@ def test_health(client):
 
 
 def test_openapi_is_served(client):
-    assert client.get("/openapi.json").json()["info"]["title"] == "kcalibre"
+    assert client.get("/openapi.json").json()["info"]["title"] == "Remy"
 
 
 def test_requests_are_logged_without_query_string(client, caplog):
-    with caplog.at_level(logging.INFO, logger="kcalibre"):
+    with caplog.at_level(logging.INFO, logger="remy"):
         client.get("/health?weight=72")
-    ours = [r.getMessage() for r in caplog.records if r.name == "kcalibre"]
+    ours = [r.getMessage() for r in caplog.records if r.name == "remy"]
     assert any("GET /health -> 200" in m for m in ours)
     assert not any("weight" in m for m in ours)
 
@@ -51,13 +51,13 @@ def test_empty_env_vars_fall_back_to_defaults(monkeypatch):
 
 
 def test_env_vars_are_read(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/kcalibre")
-    monkeypatch.setenv("KCALIBRE_ADMIN_KEY", "s3cret")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/remy")
+    monkeypatch.setenv("REMY_ADMIN_KEY", "s3cret")
     get_settings.cache_clear()
     try:
         s = get_settings()
         assert s.database_url.startswith("postgresql")
-        assert s.kcalibre_admin_key.get_secret_value() == "s3cret"
+        assert s.remy_admin_key.get_secret_value() == "s3cret"
         assert "s3cret" not in repr(s)
     finally:
         get_settings.cache_clear()

@@ -1,20 +1,20 @@
 services:
-  kcalibre:
+  remy:
     build: .
     # Once releases are published (milestone 3), you can use the image instead of building:
-    # image: ghcr.io/constantin-hentgen/kcalibre:latest
-    container_name: kcalibre
+    # image: ghcr.io/constantin-hentgen/remy:latest
+    container_name: remy
     restart: unless-stopped
     # Each variable is interpolated from the .env file next to this file (docker compose) or from the Portainer
     # stack UI. A missing variable arrives empty and takes the code default (see .env.example).
     environment:
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/kcalibre.db}
-      KCALIBRE_ADMIN_KEY: ${KCALIBRE_ADMIN_KEY:-}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/remy.db}
+      REMY_ADMIN_KEY: ${REMY_ADMIN_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-}
     ports:
-      - "${KCALIBRE_PORT:-18100}:8000"
+      - "${REMY_PORT:-18100}:8000"
     volumes:
-      - kcalibre-data:/data
+      - remy-data:/data
 
 volumes:
-  kcalibre-data:
+  remy-data:
