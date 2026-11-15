@@ -9,7 +9,7 @@ from sqlalchemy import select
 from remy.schemas import WorkoutIn, WorkoutOut
 from remy.service.convert import workout_out
 from remy.service.db import User, WorkoutRow
-from remy.service.deps import CurrentUser, Db, local_now
+from remy.service.deps import CurrentUser, Db, local_now, parse_day
 
 router = APIRouter(prefix="/v1/me/workouts", tags=["workouts"])
 
@@ -47,12 +47,14 @@ def list_workouts(
     request: Request,
     db: Db,
     user: CurrentUser,
-    start: Annotated[datetime.date | None, Query(alias="from", description="First day; default: today.")] = None,
-    end: Annotated[datetime.date | None, Query(alias="to", description="Last day; default: same as from.")] = None,
+    start: Annotated[str | None, Query(alias="from", description="First day: ISO date, today or yesterday.")] = None,
+    end: Annotated[str | None, Query(alias="to", description="Last day; default: same as from.")] = None,
 ) -> list[WorkoutOut]:
-    start = start or local_now(request, user).date()
-    end = end or start
-    return [workout_out(w, user.weight_kg) for w in workouts_between(db, user, start, end)]
+    """Workouts between two local dates (inclusive). Default: today."""
+    today = local_now(request, user).date()
+    first = parse_day(start, today) if start else today
+    last = parse_day(end, today) if end else first
+    return [workout_out(w, user.weight_kg) for w in workouts_between(db, user, first, last)]
 
 
 @router.delete("/{workout_id}")

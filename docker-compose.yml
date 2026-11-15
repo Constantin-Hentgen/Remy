@@ -1,7 +1,7 @@
 services:
   remy:
     build: .
-    # Once releases are published (milestone 3), you can use the image instead of building:
+    # Use the published image instead of building from source (pin a version in production):
     # image: ghcr.io/constantin-hentgen/remy:latest
     container_name: remy
     restart: unless-stopped

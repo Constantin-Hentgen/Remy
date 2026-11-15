@@ -1,5 +1,10 @@
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
+# Links the GHCR package to the repository (and its README, licence and permissions).
+LABEL org.opencontainers.image.source="https://github.com/Constantin-Hentgen/Remy" \
+      org.opencontainers.image.description="Remy: self-hosted nutrition tracking for endurance athletes" \
+      org.opencontainers.image.licenses="MIT"
+
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_DEV=1 PYTHONUNBUFFERED=1
 
 WORKDIR /app

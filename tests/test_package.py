@@ -20,3 +20,9 @@ def test_library_import_is_light():
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout.strip()
     assert out == ""
+
+
+def test_client_is_not_imported_by_the_library():
+    code = "import sys, remy, remy.schemas; print('httpx' in sys.modules)"
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout.strip()
+    assert out == "False"

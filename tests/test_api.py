@@ -188,6 +188,10 @@ def test_list_meals_by_range(alice):
     both = alice.get("/v1/me/meals", params={"from": "2026-11-13", "to": TODAY}).json()
     assert [m["text"] for m in both] == ["Hier", "Matin", "Midi"]
     assert alice.get("/v1/me/meals", params={"from": TODAY, "to": "2026-11-13"}).status_code == 422
+    assert [m["text"] for m in alice.get("/v1/me/meals", params={"from": "yesterday", "to": "today"}).json()] == [
+        "Hier", "Matin", "Midi",
+    ]  # fmt: skip
+    assert alice.get("/v1/me/meals", params={"from": "someday"}).status_code == 422
 
 
 def test_patch_and_delete_meal(alice):
