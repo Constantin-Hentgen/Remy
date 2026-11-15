@@ -57,7 +57,10 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF", "ANN"]
-ignore = ["ANN401"]
+# RUF001-003: ×, –, − and French typography (narrow no-break spaces, « ») are intentional in this bilingual,
+# formula-heavy codebase.
+# SIM905: "a b c".split() keeps word lists (stopwords) readable.
+ignore = ["ANN401", "RUF001", "RUF002", "RUF003", "SIM905"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN"]
