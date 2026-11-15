@@ -34,7 +34,7 @@ uv run --frozen ruff check && uv run --frozen ruff format --check
 ## Documentation
 
 Everything else (configuration, API, data sources, integration with clients) is in the
-**[wiki](https://github.com/Constantin-Hentgen/remy/wiki)**.
+**[wiki](https://github.com/Constantin-Hentgen/Remy/wiki)**.
 
 ## Licence and data
 
