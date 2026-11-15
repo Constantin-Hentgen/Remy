@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Release pull requests are opened with GITHUB_TOKEN, which does not trigger pull_request workflows:
-  # the release-please workflow dispatches this one on the release branch instead.
+  # Manual runs. Release pull requests get their checks from the pull_request run, which the
+  # release-please workflow approves (GitHub holds runs on PRs opened by github-actions).
   workflow_dispatch:
 
 permissions:
