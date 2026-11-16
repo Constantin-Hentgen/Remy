@@ -13,7 +13,7 @@ from remy import __version__
 from remy.service import logging as service_logging
 from remy.service import migrate
 from remy.service.db import make_engine
-from remy.service.routers import admin, days, foods, meals, profile, slot_checks, workouts
+from remy.service.routers import admin, days, foods, imports, meals, profile, slot_checks, workouts
 from remy.service.settings import Settings, get_settings
 
 logger = logging.getLogger("remy")
@@ -64,7 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "database unreachable") from e
         return {"status": "ok", "version": __version__, "database": "ok"}
 
-    for module in (admin, foods, profile, meals, workouts, days, slot_checks):
+    for module in (admin, foods, profile, meals, workouts, days, slot_checks, imports):
         app.include_router(module.router)
 
     logger.info("Remy %s ready", __version__)

@@ -7,11 +7,12 @@ import datetime
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from remy.checks import FindingCode
 from remy.energy import Profile, Sex
 from remy.foods import Lang, Nutrients
+from remy.importers.bob import Problem
 from remy.nutrients import ItemWarning, MealItem, MealItemIn
 from remy.slots import Slot
 from remy.summary import DaySummary, WeekSummary
@@ -248,3 +249,31 @@ class SlotCheckOut(BaseModel):
     slot: CheckSlot
     status: CheckStatus | None = Field(description="None: nothing recorded for this slot.")
     updated_at: datetime.datetime | None = None
+
+
+# --- import -------------------------------------------------------------------------------------------------------
+
+
+class BobStateIn(BaseModel):
+    """Bob's state file (``coach_state.json``), as it is. Only ``meals``, ``profile`` and ``meal_checks`` are read."""
+
+    model_config = ConfigDict(extra="allow")
+
+    meals: list = Field(default_factory=list)
+    profile: dict = Field(default_factory=dict)
+    meal_checks: dict = Field(default_factory=dict)
+
+
+class ImportCounts(BaseModel):
+    imported: int = 0
+    already_present: int = Field(default=0, description="Left as they are: imported earlier, or set in Remy since.")
+    invalid: int = Field(default=0, description="Entries that could not be read (see problems).")
+
+
+class BobImportReport(BaseModel):
+    dry_run: bool = Field(description="True: nothing was written; this is what would happen.")
+    meals: ImportCounts
+    meal_checks: ImportCounts
+    profile_set: list[str] = Field(description="Profile fields filled from Bob's profile.")
+    profile_kept: list[str] = Field(description="Profile fields already set in Remy: not overwritten.")
+    problems: list[Problem]

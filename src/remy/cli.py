@@ -7,6 +7,12 @@ Account management works directly on the database, so it needs no admin key and 
 import argparse
 import sys
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
+    from remy.service.db import User
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -36,7 +42,42 @@ def _parser() -> argparse.ArgumentParser:
     key_list.add_argument("user")
     key_revoke = key.add_parser("revoke", help="revoke an API key by id")
     key_revoke.add_argument("id", type=int)
+
+    imp = sub.add_parser("import", help="import data from another tool").add_subparsers(dest="action", required=True)
+    bob = imp.add_parser("bob", help="import the meal log, profile and meal checks of Bob's state file")
+    bob.add_argument("file", help="path of Bob's state file (coach_state.json)")
+    bob.add_argument("--user", required=True, help="the Remy user receiving the data")
+    bob.add_argument("--dry-run", action="store_true", help="report what would be imported, write nothing")
     return parser
+
+
+def _import_bob(db: "Session", owner: "User", path: str, dry_run: bool) -> int:
+    import json
+
+    from remy.service.importing import import_bob
+
+    try:
+        with open(path, encoding="utf-8") as f:
+            state = json.load(f)
+    except (OSError, ValueError) as e:
+        print(f"remy: cannot read {path}: {e}", file=sys.stderr)
+        return 1
+    if not isinstance(state, dict):
+        print(f"remy: {path} is not a Bob state file", file=sys.stderr)
+        return 1
+    report = import_bob(db, owner, state, dry_run)
+    prefix = "dry run, nothing written: " if dry_run else ""
+    print(f"{prefix}meals: {report.meals.imported} imported, {report.meals.already_present} already there, "
+          f"{report.meals.invalid} unreadable")  # fmt: skip
+    print(f"{prefix}meal checks: {report.meal_checks.imported} imported, {report.meal_checks.already_present} "
+          f"already there, {report.meal_checks.invalid} unreadable")  # fmt: skip
+    print(
+        f"{prefix}profile: set {', '.join(report.profile_set) or 'nothing'}"
+        + (f"; kept {', '.join(report.profile_kept)}" if report.profile_kept else "")
+    )
+    for problem in report.problems:
+        print(f"  {problem.section} {problem.ref}: {problem.detail}")
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -96,6 +137,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         owner = db.scalar(select(User).where(User.name == args.user))
         if owner is None:
             return fail(f"no user {args.user!r}")
+        if args.command == "import":
+            return _import_bob(db, owner, args.file, args.dry_run)
         if args.action == "create":
             row, secret = security.create_api_key(db, owner, args.label)
             db.commit()
