@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.3.0...v0.4.0) (2026-11-16)
+
+
+### Added
+
+* **import:** idempotent import of Bob's meal log, profile and meal checks ([#46](https://github.com/Constantin-Hentgen/Remy/issues/46)) ([8d66c82](https://github.com/Constantin-Hentgen/Remy/commit/8d66c82ea7b9bba6136c5cc4b85cc4a17db1a91b))
+
+
+### Fixed
+
+* **docker:** include the Postgres driver in the image ([#45](https://github.com/Constantin-Hentgen/Remy/issues/45)) ([a2a2bcb](https://github.com/Constantin-Hentgen/Remy/commit/a2a2bcb7599a63598a360b314e7a4de30e6df628))
+
 ## [0.3.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.2.0...v0.3.0) (2026-11-16)
 
 
