@@ -1,6 +1,6 @@
 [project]
 name = "remy"
-version = "0.5.0"
+version = "0.6.0"
 description = "Self-hosted nutrition tracking for endurance athletes: food lookup, meal log and energy balance against training."
 readme = "README.md"
 license = "MIT"

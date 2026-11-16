@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.5.0...v0.6.0) (2026-11-16)
+
+
+### Added
+
+* **data:** English Ciqual food names ([#57](https://github.com/Constantin-Hentgen/Remy/issues/57)) ([90bc7f2](https://github.com/Constantin-Hentgen/Remy/commit/90bc7f2334012ee9ab7ec3f38f713495f66cf8ea))
+
+
+### Fixed
+
+* **search:** rank plain foods above compounds and prefer average foods ([#55](https://github.com/Constantin-Hentgen/Remy/issues/55)) ([3398d72](https://github.com/Constantin-Hentgen/Remy/commit/3398d72140b69edd0d40eb7a2f7c9028bb66f98d))
+
 ## [0.5.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.4.0...v0.5.0) (2026-11-16)
 
 
