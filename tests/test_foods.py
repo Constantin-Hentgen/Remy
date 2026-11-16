@@ -50,6 +50,14 @@ def test_tokens_drop_stopwords_and_elisions():
         ("œufs durs", "22010"),
         ("compote de pommes", "13038"),  # Compote de pomme
         ("bananes", "13005"),  # Banane, pulpe, crue
+        # ambiguous queries (#29)
+        ("pommes", "13086"),  # an apple, not "Pomme de terre"
+        ("pomme", "13086"),
+        ("fromage râpé", "12118"),  # Emmental râpé, not "Fromage de tête"
+        ("jambon blanc", "28900"),  # Jambon cuit, supérieur
+        ("yaourt nature", "19600"),  # the "aliment moyen" entry
+        ("fromage", "12999"),  # Fromage (aliment moyen)
+        ("pomme de terre", "4008"),  # a compound the query asks for stays reachable
         # word starts
         ("emmen", "12115"),  # Emmental ou emmenthal
         # elision

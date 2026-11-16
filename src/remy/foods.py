@@ -6,7 +6,9 @@ nutrients per 100 g (``src/remy/data/ciqual_2020.csv``, rebuilt by ``scripts/bui
 Search is deliberately simple and deterministic: clients (often an LLM) send short generic descriptions such as
 "riz blanc cuit" or "oeuf dur" and pick among the candidates returned. Matching ignores case, accents and simple
 plurals, drops stopwords, and ranks first the foods whose name *starts* with the main word, because Ciqual names put
-the food first and its preparation after ("Riz blanc, cuit, non salé").
+the food first and its preparation after ("Riz blanc, cuit, non salé"). A food whose name joins its first word to
+another one the query does not use ("Pomme de terre", "Fromage de tête") ranks below the plain food ("Pomme Golden"),
+and a few everyday phrases are rewritten to Ciqual's wording ("jambon blanc").
 """
 
 import csv
@@ -27,6 +29,15 @@ STOPWORDS: dict[Lang, frozenset[str]] = {
     "fr": frozenset("au aux a la le les de des du et en avec sans d l un une ou sur pour type".split()),
     "en": frozenset("a an the of and with without in on or for to type".split()),
 }
+
+
+# Everyday phrases that Ciqual names differently. Applied to the normalized query, in French only.
+QUERY_ALIASES: dict[str, str] = {
+    "jambon blanc": "jambon cuit superieur",
+    "fromage rape": "emmental rape",
+}
+AVERAGE_FOOD = "aliment moyen"
+LINKERS: dict[Lang, frozenset[str]] = {"fr": frozenset({"de", "du", "des", "d", "au", "aux"}), "en": frozenset({"of"})}
 
 
 class Nutrients(BaseModel):
@@ -92,6 +103,15 @@ def tokens(text: str, lang: Lang = "fr") -> list[str]:
     return [t for t in normalize(text).split() if t not in stop and len(t) > 1]
 
 
+def _expand(query: str, lang: Lang) -> str:
+    """The query with its everyday phrases replaced by Ciqual's wording (see ``QUERY_ALIASES``)."""
+    text = normalize(query)
+    if lang == "fr":
+        for phrase, wording in QUERY_ALIASES.items():
+            text = re.sub(rf"\b{phrase}\b", wording, text)
+    return text
+
+
 def _singular(t: str) -> str:
     """Crude singular for French and English plurals ("pâtes", "noix", "eggs"); short words are left alone."""
     return t[:-1] if len(t) > 3 and t[-1] in "sx" else t
@@ -119,6 +139,11 @@ class FoodTable:
 
     def __init__(self, foods: list[Food]) -> None:
         self._foods = {f.code: f for f in foods}
+        # Words of the head of each name (up to the first comma), and the "average food" entries.
+        self._heads: dict[Lang, dict[str, list[str]]] = {
+            lang: {f.code: normalize(f.name(lang).split(",")[0]).split() for f in foods} for lang in LANGS
+        }
+        self._average = {f.code for f in foods if AVERAGE_FOOD in normalize(f.name_fr)}
         self._tokens: dict[Lang, dict[str, list[str]]] = {
             lang: {f.code: tokens(f.name(lang) + " " + (f.brand or ""), lang) for f in foods} for lang in LANGS
         }
@@ -148,14 +173,24 @@ class FoodTable:
     def search(self, query: str, lang: Lang = "fr", limit: int = 5) -> list[Food]:
         """Foods closest to a short description, best first.
 
-        Sorted by: name starts with the first query word, then average word score, then how well the first word
-        matches, then shorter names (the generic food before its variants), then table order.
+        Sorted by: name starts with the first query word, then average word score, then not being a compound
+        ("Pomme de terre" for "pomme"), then how well the first word matches, then shorter names (the generic food
+        before its variants), then "average food" entries, then table order.
         """
         return [food for _, food in self.search_scored(query, lang, limit)]
 
+    def _is_compound(self, code: str, lang: Lang, words: list[str]) -> bool:
+        """Whether the name's head joins its first word to another one the query does not use: "Pomme de terre",
+        "Fromage de tête". Such a food is a different food from the first word alone."""
+        head = self._heads[lang][code]
+        for i, word in enumerate(head[:-1]):
+            if word in LINKERS[lang] and _score(head[i + 1], words) < 0.8 and i > 0:
+                return True
+        return False
+
     def search_scored(self, query: str, lang: Lang = "fr", limit: int = 5) -> list[tuple[tuple, Food]]:
         """Like :meth:`search`, with each food's sort key (comparable across tables, higher is better)."""
-        words = tokens(query, lang)
+        words = tokens(_expand(query, lang), lang)
         if not words or limit <= 0:
             return []
         scored = []
@@ -164,7 +199,15 @@ class FoodTable:
             if not score:
                 continue
             first = _score(words[0], name_tokens[:1])
-            scored.append(((first > 0, round(score / len(words), 3), first, -len(name_tokens)), code))
+            key = (
+                first > 0,
+                round(score / len(words), 3),
+                not self._is_compound(code, lang, words),
+                first,
+                -len(name_tokens),
+                code in self._average,
+            )
+            scored.append((key, code))
         scored.sort(key=lambda s: s[0], reverse=True)  # stable: ties keep table order
         return [(key, self._foods[code]) for key, code in scored[:limit]]
 
