@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.4.0...v0.5.0) (2026-11-16)
+
+
+### Added
+
+* **off:** Open Food Facts barcode lookup with a local cache ([#52](https://github.com/Constantin-Hentgen/Remy/issues/52)) ([845cd0f](https://github.com/Constantin-Hentgen/Remy/commit/845cd0fdb42b98df755938bbec13c1af1a31f231))
+* **recipes:** recipes as foods, logged by portion ([#54](https://github.com/Constantin-Hentgen/Remy/issues/54)) ([a479de3](https://github.com/Constantin-Hentgen/Remy/commit/a479de3765d21cfa04cccdcdb8f21b9ab294d410))
+
 ## [0.4.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.3.0...v0.4.0) (2026-11-16)
 
 
