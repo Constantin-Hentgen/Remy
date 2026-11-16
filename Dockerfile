@@ -11,11 +11,11 @@ WORKDIR /app
 
 # Dependencies first: this layer stays cached while pyproject.toml and uv.lock do not change.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --extra server --no-install-project
+RUN uv sync --frozen --no-dev --extra server --extra postgres --no-install-project
 
 COPY README.md LICENSE NOTICE ./
 COPY src ./src
-RUN uv sync --frozen --no-dev --extra server --no-editable
+RUN uv sync --frozen --no-dev --extra server --extra postgres --no-editable
 
 # /data holds the SQLite database (named volume; it inherits these permissions when first created).
 RUN useradd --system --no-create-home remy && mkdir -p /data && chown remy /data

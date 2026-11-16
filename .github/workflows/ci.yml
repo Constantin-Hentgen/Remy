@@ -37,6 +37,7 @@ jobs:
       - name: Build the image and probe /health
         run: |
           docker build -t remy:ci .
+          docker run --rm --entrypoint python remy:ci -c "import psycopg"  # Postgres driver is in the image
           docker run -d --name remy -p 8000:8000 remy:ci
           for i in $(seq 1 30); do
             curl -fsS http://127.0.0.1:8000/health && exit 0
