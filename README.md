@@ -28,7 +28,15 @@ docker compose exec remy remy user create alice --timezone Europe/Paris
 curl -H "Authorization: Bearer $KEY" "http://localhost:18100/v1/foods?q=riz+blanc+cuit"
 ```
 
-Interactive API docs are served at `/docs`.
+Interactive API docs are served at `/docs`. From Python, install the `client` extra and use the typed client:
+
+```python
+from remy.client import RemyClient
+
+with RemyClient("http://localhost:18100", api_key=KEY) as remy:
+    remy.log_meal("Riz poulet", items=[{"food_query": "riz blanc cuit", "grams": 200}])
+    print(remy.day("today").balance_kcal)
+```
 
 For development:
 

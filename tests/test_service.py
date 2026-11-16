@@ -73,3 +73,11 @@ def test_compose_passes_every_setting():
     compose = (ROOT / "docker-compose.yml").read_text()
     for name in Settings.model_fields:
         assert f"{name.upper()}:" in compose
+
+
+def test_image_is_linked_to_the_repository():
+    # The label links the GHCR package to the repo, which is what lets a public repo's image be made public.
+    assert (
+        'org.opencontainers.image.source="https://github.com/Constantin-Hentgen/Remy"'
+        in (ROOT / "Dockerfile").read_text()
+    )

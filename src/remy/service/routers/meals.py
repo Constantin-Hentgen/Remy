@@ -12,7 +12,7 @@ from remy.nutrients import ItemWarning, MealItemIn, compute
 from remy.schemas import MealIn, MealLogged, MealOut, MealPatch
 from remy.service.convert import meal_core, meal_out
 from remy.service.db import MealRow, User
-from remy.service.deps import CurrentUser, Db, local_now, to_local, user_lang
+from remy.service.deps import CurrentUser, Db, local_now, parse_day, to_local, user_lang
 from remy.slots import slot_of
 
 router = APIRouter(prefix="/v1/me/meals", tags=["meals"])
@@ -106,12 +106,14 @@ def list_meals(
     request: Request,
     db: Db,
     user: CurrentUser,
-    start: Annotated[datetime.date | None, Query(alias="from", description="First day; default: today.")] = None,
-    end: Annotated[datetime.date | None, Query(alias="to", description="Last day; default: same as from.")] = None,
+    start: Annotated[str | None, Query(alias="from", description="First day: ISO date, today or yesterday.")] = None,
+    end: Annotated[str | None, Query(alias="to", description="Last day; default: same as from.")] = None,
 ) -> list[MealOut]:
-    """Meals between two local dates (inclusive), oldest first."""
-    start = start or local_now(request, user).date()
-    end = end or start
+    """Meals between two local dates (inclusive), oldest first. Default: today."""
+    today = local_now(request, user).date()
+    first = parse_day(start, today) if start else today
+    last = parse_day(end, today) if end else first
+    start, end = first, last
     if end < start or (end - start).days > MAX_RANGE_DAYS:
         raise HTTPException(422, f"'to' must be within {MAX_RANGE_DAYS} days of 'from'")
     return [meal_out(m) for m in meals_between(db, user, start, end)]
