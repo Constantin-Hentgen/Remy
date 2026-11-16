@@ -24,6 +24,7 @@ from remy.schemas import (
     CheckSlot,
     CheckStatus,
     DayOut,
+    FoodOut,
     FoodSearchOut,
     MealIn,
     MealLogged,
@@ -102,12 +103,20 @@ class RemyClient:
 
     # --- foods and nutrients ----------------------------------------------------------------------------------
 
-    def foods(self, q: str, *, lang: Lang | None = None, limit: int = 5) -> FoodSearchOut:
-        """Candidate foods for a short description, best first."""
-        params: dict[str, Any] = {"q": q, "limit": limit}
+    def foods(
+        self, q: str, *, lang: Lang | None = None, limit: int = 5, source: Literal["ciqual", "off", "all"] = "ciqual"
+    ) -> FoodSearchOut:
+        """Candidate foods for a short description, best first (``source``: see the API)."""
+        params: dict[str, Any] = {"q": q, "limit": limit, "source": source}
         if lang:
             params["lang"] = lang
         return FoodSearchOut.model_validate(self._request("GET", "/v1/foods", params=params))
+
+    def barcode(self, barcode: str, *, lang: Lang | None = None) -> FoodOut:
+        """A packaged product by barcode (Open Food Facts); use its ``code`` in meal items."""
+        return FoodOut.model_validate(
+            self._request("GET", f"/v1/foods/barcode/{barcode}", params={"lang": lang} if lang else {})
+        )
 
     def nutrients(self, items: list[MealItemIn | dict[str, Any]], *, lang: Lang | None = None) -> MealComputation:
         """Nutrients of ``[{food_code | food_query, grams}]``; nothing is stored."""

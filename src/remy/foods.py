@@ -16,7 +16,7 @@ import unicodedata
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 Lang = Literal["fr", "en"]
 LANGS: tuple[Lang, ...] = ("fr", "en")
@@ -68,8 +68,11 @@ class Food(BaseModel):
     code: str
     name_fr: str
     name_en: str | None = None
+    brand: str | None = None
     source: str = "ciqual"
     per_100g: Nutrients
+    portion_g: float | None = Field(default=None, description="Weight of one portion, for foods eaten by portion.")
+    attribution: str | None = Field(default=None, description="Credit required by the source's licence, if any.")
 
     def name(self, lang: Lang = "fr") -> str:
         """Name in ``lang``; English falls back to French where the table has no English name."""
@@ -117,7 +120,7 @@ class FoodTable:
     def __init__(self, foods: list[Food]) -> None:
         self._foods = {f.code: f for f in foods}
         self._tokens: dict[Lang, dict[str, list[str]]] = {
-            lang: {f.code: tokens(f.name(lang), lang) for f in foods} for lang in LANGS
+            lang: {f.code: tokens(f.name(lang) + " " + (f.brand or ""), lang) for f in foods} for lang in LANGS
         }
 
     @classmethod
@@ -148,6 +151,10 @@ class FoodTable:
         Sorted by: name starts with the first query word, then average word score, then how well the first word
         matches, then shorter names (the generic food before its variants), then table order.
         """
+        return [food for _, food in self.search_scored(query, lang, limit)]
+
+    def search_scored(self, query: str, lang: Lang = "fr", limit: int = 5) -> list[tuple[tuple, Food]]:
+        """Like :meth:`search`, with each food's sort key (comparable across tables, higher is better)."""
         words = tokens(query, lang)
         if not words or limit <= 0:
             return []
@@ -159,7 +166,7 @@ class FoodTable:
             first = _score(words[0], name_tokens[:1])
             scored.append(((first > 0, round(score / len(words), 3), first, -len(name_tokens)), code))
         scored.sort(key=lambda s: s[0], reverse=True)  # stable: ties keep table order
-        return [self._foods[code] for _, code in scored[:limit]]
+        return [(key, self._foods[code]) for key, code in scored[:limit]]
 
 
 @functools.cache

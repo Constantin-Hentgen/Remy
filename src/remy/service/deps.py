@@ -10,7 +10,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from remy.foods import Lang
-from remy.service import security
+from remy.nutrients import Resolver
+from remy.service import openfoodfacts, security
 from remy.service.db import User
 
 bearer = HTTPBearer(auto_error=False, description="A user API key, or the admin key on /v1/admin routes.")
@@ -47,6 +48,14 @@ def require_admin(request: Request, credentials: Credentials) -> None:
 
 
 CurrentUser = Annotated[User, Depends(current_user)]
+
+
+def food_resolver(request: Request, db: Db, user: CurrentUser) -> Resolver:
+    """Finds the foods the Ciqual table does not have (Open Food Facts products)."""
+    return openfoodfacts.resolver(db, request.app.state.off)
+
+
+FoodResolver = Annotated[Resolver, Depends(food_resolver)]
 
 
 def local_now(request: Request, user: User) -> datetime.datetime:

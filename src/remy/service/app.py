@@ -13,6 +13,7 @@ from remy import __version__
 from remy.service import logging as service_logging
 from remy.service import migrate
 from remy.service.db import make_engine
+from remy.service.openfoodfacts import OpenFoodFacts
 from remy.service.routers import admin, days, foods, imports, meals, profile, slot_checks, workouts
 from remy.service.settings import Settings, get_settings
 
@@ -42,6 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = engine
     app.state.sessionmaker = sessionmaker(engine, expire_on_commit=False)
+    app.state.off = OpenFoodFacts(settings)
     app.state.clock = lambda: datetime.datetime.now(datetime.UTC)  # replaced in tests
 
     @app.middleware("http")

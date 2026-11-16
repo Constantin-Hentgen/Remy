@@ -15,7 +15,12 @@ TODAY = "2026-11-14"
 
 @pytest.fixture
 def app(tmp_path):
-    settings = Settings(database_url=f"sqlite:///{tmp_path / 'remy.db'}", remy_admin_key=ADMIN_KEY, _env_file=None)
+    settings = Settings(
+        database_url=f"sqlite:///{tmp_path / 'remy.db'}",
+        remy_admin_key=ADMIN_KEY,
+        remy_off_enabled=False,
+        _env_file=None,
+    )
     app = create_app(settings)
     app.state.clock = lambda: NOW_UTC
     yield app

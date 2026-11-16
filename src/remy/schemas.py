@@ -39,8 +39,13 @@ class FoodOut(BaseModel):
     name: str = Field(description="Name in the requested language (French where no English name exists).")
     name_fr: str
     name_en: str | None = None
-    source: str
+    brand: str | None = None
+    source: str = Field(description="ciqual, off (Open Food Facts) or recipe.")
     per_100g: Nutrients
+    portion_g: float | None = Field(default=None, description="Weight of one portion, if the food has one.")
+    attribution: str | None = Field(
+        default=None, description="Credit to show when using this food, if its source asks."
+    )
 
 
 class FoodSearchOut(BaseModel):

@@ -132,6 +132,29 @@ class SlotCheckRow(Base):
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class OffProduct(Base):
+    """Cache of Open Food Facts products, shared by all users (public data, ODbL: a derivative database).
+
+    ``found`` is False for a barcode OFF does not know or whose product has no energy value (a negative entry).
+    """
+
+    __tablename__ = "off_products"
+
+    barcode: Mapped[str] = mapped_column(String(14), primary_key=True)
+    found: Mapped[bool]
+    name_fr: Mapped[str | None] = mapped_column(String(300))
+    name_en: Mapped[str | None] = mapped_column(String(300))
+    brand: Mapped[str | None] = mapped_column(String(200))
+    kcal: Mapped[float | None]
+    protein_g: Mapped[float | None]
+    carbs_g: Mapped[float | None]
+    fat_g: Mapped[float | None]
+    sugars_g: Mapped[float | None]
+    fiber_g: Mapped[float | None]
+    salt_g: Mapped[float | None]
+    fetched_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=utcnow)
+
+
 def make_engine(database_url: str) -> Engine:
     """Engine for the configured URL. SQLite gets its folder created, foreign keys on and cross-thread access
     (FastAPI runs sync endpoints in a thread pool); an in-memory SQLite database keeps a single connection."""
