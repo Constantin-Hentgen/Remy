@@ -256,6 +256,50 @@ class SlotCheckOut(BaseModel):
     updated_at: datetime.datetime | None = None
 
 
+# --- recipes ------------------------------------------------------------------------------------------------------
+
+
+class RecipeIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    items: list[MealItemIn] = Field(min_length=1, max_length=MAX_ITEMS, description="Ingredients, with their weight.")
+    portions: float = Field(default=1, gt=0, le=100, description="How many portions the recipe makes.")
+    yield_g: float | None = Field(
+        default=None, gt=0, le=50000, description="Weight of the cooked dish; default: the weight of the ingredients."
+    )
+    external_id: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Client id (e.g. the groceries manager's): posting it again updates the recipe.",
+    )
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _squash_spaces(cls, v: object) -> object:
+        return " ".join(v.split()) if isinstance(v, str) else v
+
+
+class RecipeOut(BaseModel):
+    id: int
+    code: str = Field(description="Food code to use in meal items: recipe:<id>.")
+    name: str
+    external_id: str | None = None
+    portions: float
+    weight_g: float = Field(description="Weight of the dish (yield_g, or the ingredients' weight).")
+    portion_g: float
+    items: list[MealItem]
+    totals: Nutrients = Field(description="The whole dish.")
+    per_portion: Nutrients
+    per_100g: Nutrients
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
+class RecipeSaved(BaseModel):
+    recipe: RecipeOut
+    created: bool
+    warnings: list[ItemWarning]
+
+
 # --- import -------------------------------------------------------------------------------------------------------
 
 

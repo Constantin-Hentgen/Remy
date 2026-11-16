@@ -33,6 +33,9 @@ from remy.schemas import (
     NutrientsIn,
     ProfileIn,
     ProfileOut,
+    RecipeIn,
+    RecipeOut,
+    RecipeSaved,
     SlotCheckIn,
     SlotCheckOut,
     WeekOut,
@@ -104,7 +107,12 @@ class RemyClient:
     # --- foods and nutrients ----------------------------------------------------------------------------------
 
     def foods(
-        self, q: str, *, lang: Lang | None = None, limit: int = 5, source: Literal["ciqual", "off", "all"] = "ciqual"
+        self,
+        q: str,
+        *,
+        lang: Lang | None = None,
+        limit: int = 5,
+        source: Literal["ciqual", "off", "recipe", "all"] = "ciqual",
     ) -> FoodSearchOut:
         """Candidate foods for a short description, best first (``source``: see the API)."""
         params: dict[str, Any] = {"q": q, "limit": limit, "source": source}
@@ -122,6 +130,37 @@ class RemyClient:
         """Nutrients of ``[{food_code | food_query, grams}]``; nothing is stored."""
         body = NutrientsIn(items=[MealItemIn.model_validate(i) for i in items], lang=lang)
         return MealComputation.model_validate(self._request("POST", "/v1/nutrients", json=_json(body)))
+
+    # --- recipes ----------------------------------------------------------------------------------------------
+
+    def save_recipe(
+        self,
+        name: str,
+        items: list[MealItemIn | dict[str, Any]],
+        *,
+        portions: float = 1,
+        yield_g: float | None = None,
+        external_id: str | None = None,
+    ) -> RecipeSaved:
+        """Create a recipe, or replace the one pushed earlier under the same ``external_id``."""
+        body = RecipeIn(
+            name=name,
+            items=[MealItemIn.model_validate(i) for i in items],
+            portions=portions,
+            yield_g=yield_g,
+            external_id=external_id,
+        )
+        return RecipeSaved.model_validate(self._request("POST", "/v1/me/recipes", json=_json(body)))
+
+    def recipes(self, *, external_id: str | None = None) -> list[RecipeOut]:
+        params = {"external_id": external_id} if external_id else {}
+        return [RecipeOut.model_validate(r) for r in self._request("GET", "/v1/me/recipes", params=params)]
+
+    def recipe(self, recipe_id: int) -> RecipeOut:
+        return RecipeOut.model_validate(self._request("GET", f"/v1/me/recipes/{recipe_id}"))
+
+    def delete_recipe(self, recipe_id: int) -> RecipeOut:
+        return RecipeOut.model_validate(self._request("DELETE", f"/v1/me/recipes/{recipe_id}"))
 
     # --- profile ----------------------------------------------------------------------------------------------
 

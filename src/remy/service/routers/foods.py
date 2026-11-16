@@ -8,13 +8,13 @@ from remy import foods, off
 from remy.foods import FoodTable, Lang
 from remy.nutrients import MealComputation, compute
 from remy.schemas import FoodOut, FoodSearchOut, NutrientsIn
-from remy.service import openfoodfacts
+from remy.service import openfoodfacts, recipes
 from remy.service.convert import food_out
 from remy.service.deps import CurrentUser, Db, FoodResolver, user_lang
 
 router = APIRouter(prefix="/v1", tags=["foods"])
 
-Source = Literal["ciqual", "off", "all"]
+Source = Literal["ciqual", "off", "recipe", "all"]
 
 
 @router.get("/foods")
@@ -27,7 +27,7 @@ def search_foods(
     limit: Annotated[int, Query(ge=1, le=25)] = 5,
     source: Annotated[
         Source,
-        Query(description="ciqual (default), off (Open Food Facts products already looked up) or all."),
+        Query(description="ciqual (default), off (Open Food Facts products already looked up), recipe (yours) or all."),
     ] = "ciqual",
 ) -> FoodSearchOut:
     """Candidate foods for a description, best first, with values per 100 g. The client picks one and sends its
@@ -38,6 +38,8 @@ def search_foods(
         found += foods.ciqual().search_scored(q, language, limit)
     if source in ("off", "all"):
         found += FoodTable(openfoodfacts.cached_foods(db)).search_scored(q, language, limit)
+    if source in ("recipe", "all"):
+        found += FoodTable(recipes.foods_of(db, user)).search_scored(q, language, limit)
     found.sort(key=lambda s: s[0], reverse=True)  # stable: Ciqual first on ties
     return FoodSearchOut(query=q, lang=language, foods=[food_out(f, language) for _, f in found[:limit]])
 
