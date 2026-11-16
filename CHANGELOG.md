@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.2.0...v0.3.0) (2026-11-16)
+
+
+### Added
+
+* **api:** HTTP API v1 with users, API keys, persistence and migrations ([31d6bea](https://github.com/Constantin-Hentgen/Remy/commit/31d6bea9fb897d849f4cc4bf0dc85256ef2075de))
+* **client:** typed Python client; ci: publish the Docker image to GHCR on release ([#43](https://github.com/Constantin-Hentgen/Remy/issues/43)) ([bcad9df](https://github.com/Constantin-Hentgen/Remy/commit/bcad9dfb72f9e30ed5eb30995be032713cd6dc1e))
+
 ## [0.2.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.1.0...v0.2.0) (2026-11-15)
 
 
