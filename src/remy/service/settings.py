@@ -27,6 +27,12 @@ class Settings(BaseSettings):
         default=True,
         description="Apply database migrations at startup. Turn off to run `remy db upgrade` yourself.",
     )
+    remy_off_enabled: bool = Field(
+        default=True,
+        description="Look up barcodes on Open Food Facts. Only the barcode is sent. False: no outbound request at all.",
+    )
+    remy_off_base_url: str = Field(default="https://world.openfoodfacts.org", description="Open Food Facts server.")
+    remy_off_cache_days: int = Field(default=30, ge=1, description="How long a cached product is trusted.")
     log_level: str = Field(default="INFO", description="Python logging level: DEBUG, INFO, WARNING, ERROR.")
 
 

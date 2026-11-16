@@ -8,11 +8,11 @@ from sqlalchemy import select
 
 from remy.checks import find_duplicate
 from remy.foods import NUTRIENTS, Nutrients
-from remy.nutrients import ItemWarning, MealItemIn, compute
+from remy.nutrients import ItemWarning, MealItemIn, Resolver, compute
 from remy.schemas import MealIn, MealLogged, MealOut, MealPatch
 from remy.service.convert import meal_core, meal_out
 from remy.service.db import MealRow, User
-from remy.service.deps import CurrentUser, Db, local_now, parse_day, to_local, user_lang
+from remy.service.deps import CurrentUser, Db, FoodResolver, local_now, parse_day, to_local, user_lang
 from remy.slots import slot_of
 
 router = APIRouter(prefix="/v1/me/meals", tags=["meals"])
@@ -39,14 +39,14 @@ def _own_meal(db: Db, user: User, meal_id: int) -> MealRow:
 
 
 def _set_nutrients(
-    row: MealRow, user: User, items: list[MealItemIn] | None, estimate: Nutrients | None
+    row: MealRow, user: User, items: list[MealItemIn] | None, estimate: Nutrients | None, resolver: Resolver
 ) -> list[ItemWarning]:
     """Computed from the items when at least one matches; otherwise the client's estimate (as in Bob)."""
     warnings: list[ItemWarning] = []
     nutrients = estimate or Nutrients()
     stored_items: list[dict] = []
     if items:
-        computed = compute(items, user_lang(user, None))
+        computed = compute(items, user_lang(user, None), resolver=resolver)
         warnings = computed.warnings
         if computed.items:
             nutrients = computed.totals
@@ -68,7 +68,9 @@ def _set_time(request: Request, row: MealRow, user: User, at: datetime.datetime 
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def log_meal(request: Request, response: Response, db: Db, user: CurrentUser, body: MealIn) -> MealLogged:
+def log_meal(
+    request: Request, response: Response, db: Db, user: CurrentUser, resolver: FoodResolver, body: MealIn
+) -> MealLogged:
     """Log a meal. When ``items`` are given, nutrients are computed from the food table.
 
     The meal is always stored. ``possible_duplicate`` points at a meal with the same dish within 3 hours (unless
@@ -89,7 +91,7 @@ def log_meal(request: Request, response: Response, db: Db, user: CurrentUser, bo
     )
     local = _set_time(request, row, user, body.at)
     row.slot = body.slot or slot_of(local.time())
-    warnings = _set_nutrients(row, user, body.items, body.nutrients)
+    warnings = _set_nutrients(row, user, body.items, body.nutrients, resolver)
     duplicate = None
     if not body.repeat and not body.skipped:
         day = datetime.timedelta(days=1)
@@ -125,7 +127,9 @@ def get_meal(db: Db, user: CurrentUser, meal_id: int) -> MealOut:
 
 
 @router.patch("/{meal_id}")
-def patch_meal(request: Request, db: Db, user: CurrentUser, meal_id: int, body: MealPatch) -> MealLogged:
+def patch_meal(
+    request: Request, db: Db, user: CurrentUser, resolver: FoodResolver, meal_id: int, body: MealPatch
+) -> MealLogged:
     """Correct a meal: its text, time, slot, foods or flags. Sending ``items`` recomputes the nutrients."""
     row = _own_meal(db, user, meal_id)
     sent = body.model_fields_set
@@ -142,7 +146,7 @@ def patch_meal(request: Request, db: Db, user: CurrentUser, meal_id: int, body: 
         row.skipped = body.skipped
     warnings: list[ItemWarning] = []
     if "items" in sent or "nutrients" in sent:
-        warnings = _set_nutrients(row, user, body.items, body.nutrients)
+        warnings = _set_nutrients(row, user, body.items, body.nutrients, resolver)
     db.commit()
     return MealLogged(meal=meal_out(row), created=False, possible_duplicate=None, warnings=warnings)
 

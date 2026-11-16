@@ -11,6 +11,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-sqlite:////data/remy.db}
       REMY_ADMIN_KEY: ${REMY_ADMIN_KEY:-}
       REMY_AUTO_MIGRATE: ${REMY_AUTO_MIGRATE:-}
+      REMY_OFF_ENABLED: ${REMY_OFF_ENABLED:-}
+      REMY_OFF_BASE_URL: ${REMY_OFF_BASE_URL:-}
+      REMY_OFF_CACHE_DAYS: ${REMY_OFF_CACHE_DAYS:-}
       LOG_LEVEL: ${LOG_LEVEL:-}
     ports:
       - "${REMY_PORT:-18100}:8000"
