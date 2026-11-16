@@ -20,6 +20,7 @@ import httpx
 from remy.foods import Lang
 from remy.nutrients import MealComputation, MealItemIn
 from remy.schemas import (
+    BobImportReport,
     CheckSlot,
     CheckStatus,
     DayOut,
@@ -182,6 +183,13 @@ class RemyClient:
     def set_slot_check(self, date: DateLike, slot: CheckSlot, status: CheckStatus) -> SlotCheckOut:
         body = _json(SlotCheckIn(status=status))
         return SlotCheckOut.model_validate(self._request("PUT", f"/v1/me/slot-checks/{_day(date)}/{slot}", json=body))
+
+    # --- import -----------------------------------------------------------------------------------------------
+
+    def import_bob(self, state: dict[str, Any], *, dry_run: bool = False) -> BobImportReport:
+        """Import Bob's state file (its parsed JSON): meal log, profile and meal checks. Safe to repeat."""
+        params = {"dry_run": "true"} if dry_run else {}
+        return BobImportReport.model_validate(self._request("POST", "/v1/me/import/bob", json=state, params=params))
 
 
 def _lang(lang: Lang | None) -> dict[str, str]:
