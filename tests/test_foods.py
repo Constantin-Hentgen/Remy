@@ -98,3 +98,23 @@ def test_english_search_uses_english_names():
     assert [f.code for f in table.search("cooked white rice", "en")] == ["2"]
     assert table.search("riz", "en") == []
     assert table.get("2").name("en") == "Rice, white, cooked"
+
+
+@pytest.mark.parametrize(
+    ("query", "code"),
+    [
+        ("chicken breast", "36017"),  # Chicken, breast, without skin, raw
+        ("olive oil", "17270"),  # Olive oil, extra virgin
+        ("banana", "13005"),  # Banana, pulp, raw
+        ("cheddar", "12726"),
+        ("oat flakes", "9313"),
+    ],
+)
+def test_search_in_english(query, code):
+    assert foods.search(query, "en", limit=1)[0].code == code
+
+
+def test_every_food_has_an_english_name():
+    assert all(f.name_en for f in foods.ciqual()._foods.values())
+    assert foods.get_food("9104").name("en") == "Rice, cooked, unsalted"
+    assert foods.get_food("9104").name("fr") == "Riz blanc, cuit, non salé"
