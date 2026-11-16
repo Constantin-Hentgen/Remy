@@ -12,7 +12,16 @@ def test_upgrade_from_empty_matches_the_models(tmp_path):
     engine = make_engine(f"sqlite:///{tmp_path / 'nested' / 'remy.db'}")  # the folder is created
     migrate.upgrade(engine)
     tables = set(sa.inspect(engine).get_table_names())
-    assert tables == {"alembic_version", "users", "api_keys", "meals", "workouts", "slot_checks", "off_products"}
+    assert tables == {
+        "alembic_version",
+        "users",
+        "api_keys",
+        "meals",
+        "workouts",
+        "slot_checks",
+        "off_products",
+        "recipes",
+    }
     with engine.connect() as connection:
         diff = compare_metadata(MigrationContext.configure(connection), Base.metadata)
     assert diff == []
@@ -30,7 +39,7 @@ def test_upgrade_is_idempotent_and_keeps_data(tmp_path):
     migrate.upgrade(engine)
     with engine.connect() as connection:
         assert connection.exec_driver_sql("SELECT name FROM users").scalar() == "synthetic"
-        assert connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar() == "0002"
+        assert connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar() == "0003"
     engine.dispose()
 
 

@@ -122,6 +122,30 @@ class WorkoutRow(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=utcnow)
 
 
+class RecipeRow(Base):
+    """A user's recipe: resolved ingredients, with the totals of the whole dish."""
+
+    __tablename__ = "recipes"
+    __table_args__ = (UniqueConstraint("user_id", "external_id"), Index("ix_recipes_user_id", "user_id"))
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(120))
+    external_id: Mapped[str | None] = mapped_column(String(100))
+    portions: Mapped[float]
+    yield_g: Mapped[float | None]
+    ingredients: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    kcal: Mapped[float | None]
+    protein_g: Mapped[float | None]
+    carbs_g: Mapped[float | None]
+    fat_g: Mapped[float | None]
+    sugars_g: Mapped[float | None]
+    fiber_g: Mapped[float | None]
+    salt_g: Mapped[float | None]
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class SlotCheckRow(Base):
     __tablename__ = "slot_checks"
 
