@@ -1,64 +1,74 @@
-"""Service skeleton: health probe, configuration and request logging."""
+"""Service skeleton: health, authentication, configuration and request logging."""
 
 import logging
 import re
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 from remy import __version__
 from remy.service.app import create_app
 from remy.service.settings import Settings, get_settings
+from tests.conftest import API_KEY
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
-@pytest.fixture
-def client():
-    return TestClient(create_app(Settings(database_url="sqlite://", _env_file=None)))
-
-
-def test_health(client):
-    r = client.get("/health")
+def test_health_needs_no_key(anon):
+    r = anon.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "version": __version__, "database": "ok"}
+    assert r.json() == {"status": "ok", "version": __version__}
 
 
-def test_openapi_is_served(client):
-    assert client.get("/openapi.json").json()["info"]["title"] == "Remy"
+def test_openapi_is_served(anon):
+    assert anon.get("/openapi.json").json()["info"]["title"] == "Remy"
 
 
-def test_requests_are_logged_without_query_string(client, caplog):
+def test_v1_needs_the_key(anon):
+    assert anon.get("/v1/foods", params={"q": "riz"}).status_code == 401
+    wrong = {"Authorization": "Bearer nope"}
+    assert anon.get("/v1/foods", params={"q": "riz"}, headers=wrong).status_code == 401
+    ok = {"Authorization": f"Bearer {API_KEY}"}
+    assert anon.get("/v1/foods", params={"q": "riz"}, headers=ok).status_code == 200
+
+
+def test_without_a_configured_key_everything_is_refused():
+    client = TestClient(create_app(Settings(_env_file=None)))
+    r = client.get("/v1/foods", params={"q": "riz"}, headers={"Authorization": "Bearer anything"})
+    assert r.status_code == 401 and "REMY_API_KEY" in r.json()["detail"]
+    assert client.get("/health").status_code == 200
+
+
+def test_requests_are_logged_by_route_without_values(api, caplog):
     with caplog.at_level(logging.INFO, logger="remy"):
-        client.get("/health?weight=72")
+        api.get("/v1/foods?q=pates")
+        api.get("/health?weight=72")
+        api.get("/v1/unknown/3017620422003")
     ours = [r.getMessage() for r in caplog.records if r.name == "remy"]
+    assert any("GET /v1/foods -> 200" in m for m in ours)
     assert any("GET /health -> 200" in m for m in ours)
-    assert not any("weight" in m for m in ours)
+    assert not any("pates" in m or "weight" in m or "3017620422003" in m for m in ours)
 
 
 def test_uvicorn_access_log_is_disabled():
-    # uvicorn's access log prints query strings, which can carry health data; the middleware logs instead.
+    # uvicorn's access log prints query strings; the middleware logs instead.
     assert 'CMD ["remy", "serve"]' in (ROOT / "Dockerfile").read_text()
     assert "access_log=False" in (ROOT / "src" / "remy" / "cli.py").read_text()
 
 
 def test_empty_env_vars_fall_back_to_defaults(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "")
+    monkeypatch.setenv("REMY_API_KEY", "")
     monkeypatch.setenv("LOG_LEVEL", "")
     s = Settings(_env_file=None)
-    assert s.database_url == Settings.model_fields["database_url"].default
-    assert s.log_level == "INFO"
+    assert s.remy_api_key is None and s.log_level == "INFO"
 
 
-def test_env_vars_are_read(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@db/remy")
-    monkeypatch.setenv("REMY_ADMIN_KEY", "s3cret")
+def test_env_vars_are_read_and_secrets_hidden(monkeypatch):
+    monkeypatch.setenv("REMY_API_KEY", "s3cret")
     get_settings.cache_clear()
     try:
         s = get_settings()
-        assert s.database_url.startswith("postgresql")
-        assert s.remy_admin_key.get_secret_value() == "s3cret"
+        assert s.remy_api_key.get_secret_value() == "s3cret"
         assert "s3cret" not in repr(s)
     finally:
         get_settings.cache_clear()
@@ -76,7 +86,6 @@ def test_compose_passes_every_setting():
 
 
 def test_image_is_linked_to_the_repository():
-    # The label links the GHCR package to the repo, which is what lets a public repo's image be made public.
     assert (
         'org.opencontainers.image.source="https://github.com/Constantin-Hentgen/Remy"'
         in (ROOT / "Dockerfile").read_text()

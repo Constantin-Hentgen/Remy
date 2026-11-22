@@ -8,17 +8,9 @@ services:
     # Each variable is interpolated from the .env file next to this file (docker compose) or from the Portainer
     # stack UI. A missing variable arrives empty and takes the code default (see .env.example).
     environment:
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/remy.db}
-      REMY_ADMIN_KEY: ${REMY_ADMIN_KEY:-}
-      REMY_AUTO_MIGRATE: ${REMY_AUTO_MIGRATE:-}
-      REMY_OFF_ENABLED: ${REMY_OFF_ENABLED:-}
-      REMY_OFF_BASE_URL: ${REMY_OFF_BASE_URL:-}
-      REMY_OFF_CACHE_DAYS: ${REMY_OFF_CACHE_DAYS:-}
+      REMY_API_KEY: ${REMY_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      REMY_MODEL: ${REMY_MODEL:-}
       LOG_LEVEL: ${LOG_LEVEL:-}
     ports:
       - "${REMY_PORT:-18100}:8000"
-    volumes:
-      - remy-data:/data
-
-volumes:
-  remy-data:
