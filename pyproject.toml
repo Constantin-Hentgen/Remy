@@ -1,6 +1,6 @@
 [project]
 name = "remy"
-version = "0.6.0"
+version = "0.7.0"
 description = "Self-hosted, stateless nutrition service for endurance athletes: recipe ideas from what you have, with real nutrients from Ciqual."
 readme = "README.md"
 license = "MIT"
