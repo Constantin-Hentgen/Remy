@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.6.0...v0.7.0) (2026-11-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* stateless Remy that suggests recipes from what you have ([#62](https://github.com/Constantin-Hentgen/Remy/issues/62))
+
+### Added
+
+* stateless Remy that suggests recipes from what you have ([#62](https://github.com/Constantin-Hentgen/Remy/issues/62)) ([b899d3f](https://github.com/Constantin-Hentgen/Remy/commit/b899d3ff4f74db93d77fb2fd0e3c9eadc37900fd))
+
 ## [0.6.0](https://github.com/Constantin-Hentgen/Remy/compare/v0.5.0...v0.6.0) (2026-11-16)
 
 
