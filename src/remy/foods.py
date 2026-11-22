@@ -18,7 +18,7 @@ import unicodedata
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 Lang = Literal["fr", "en"]
 LANGS: tuple[Lang, ...] = ("fr", "en")
@@ -79,11 +79,7 @@ class Food(BaseModel):
     code: str
     name_fr: str
     name_en: str | None = None
-    brand: str | None = None
-    source: str = "ciqual"
     per_100g: Nutrients
-    portion_g: float | None = Field(default=None, description="Weight of one portion, for foods eaten by portion.")
-    attribution: str | None = Field(default=None, description="Credit required by the source's licence, if any.")
 
     def name(self, lang: Lang = "fr") -> str:
         """Name in ``lang``; English falls back to French where the table has no English name."""
@@ -145,7 +141,7 @@ class FoodTable:
         }
         self._average = {f.code for f in foods if AVERAGE_FOOD in normalize(f.name_fr)}
         self._tokens: dict[Lang, dict[str, list[str]]] = {
-            lang: {f.code: tokens(f.name(lang) + " " + (f.brand or ""), lang) for f in foods} for lang in LANGS
+            lang: {f.code: tokens(f.name(lang), lang) for f in foods} for lang in LANGS
         }
 
     @classmethod

@@ -6,7 +6,7 @@ item (unknown food, absurd weight) become warnings and leave the rest of the mea
 that item.
 """
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -25,12 +25,6 @@ class MealItemIn(BaseModel):
     food_code: str | None = None
     food_query: str | None = None
     grams: float | None = Field(default=None, description=f"Weight eaten, in grams (0 < grams <= {MAX_GRAMS}).")
-    portions: float | None = Field(
-        default=None,
-        gt=0,
-        le=50,
-        description="Number of portions, for foods that have a portion size (recipes). Ignored when grams is given.",
-    )
 
     @field_validator("food_code", "food_query", mode="before")
     @classmethod
@@ -54,7 +48,7 @@ class MealItem(BaseModel):
     nutrients: Nutrients
 
 
-WarningCode = Literal["unknown_food_code", "no_match", "invalid_grams", "no_portion", "source_unavailable"]
+WarningCode = Literal["unknown_food_code", "no_match", "invalid_grams"]
 
 
 class ItemWarning(BaseModel):
@@ -68,14 +62,6 @@ class ItemWarning(BaseModel):
     detail: str
 
 
-class FoodUnavailable(Exception):
-    """Raised by a resolver when a food exists but its source cannot be reached right now."""
-
-
-Resolver = Callable[[str], Food | None]
-"""Finds a food by a code the Ciqual table does not know (``off:…``, ``recipe:…``); may raise FoodUnavailable."""
-
-
 class MealComputation(BaseModel):
     items: list[MealItem]
     totals: Nutrients
@@ -86,7 +72,6 @@ def compute(
     items: Sequence[MealItemIn | Mapping[str, object]],
     lang: Lang = "fr",
     table: FoodTable | None = None,
-    resolver: Resolver | None = None,
 ) -> MealComputation:
     """Per-item and total nutrients of a meal.
 
@@ -101,12 +86,6 @@ def compute(
         query = (item.food_query or "")[:MAX_LABEL]
         label = query or item.food_code or ""
         food: Food | None = table.get(item.food_code) if item.food_code else None
-        if item.food_code and food is None and resolver:
-            try:
-                food = resolver(item.food_code)
-            except FoodUnavailable as e:
-                warnings.append(ItemWarning(index=index, code="source_unavailable", label=label, detail=str(e)))
-                continue
         if item.food_code and food is None:
             warnings.append(
                 ItemWarning(
@@ -126,12 +105,6 @@ def compute(
                 warnings.append(ItemWarning(index=index, code="no_match", label=label, detail="no food given"))
             continue
         grams = item.grams or 0
-        if not item.grams and item.portions:
-            if not food.portion_g:
-                detail = f"{food.name(lang)} has no portion size"
-                warnings.append(ItemWarning(index=index, code="no_portion", label=label, detail=detail))
-                continue
-            grams = item.portions * food.portion_g
         if not 0 < grams <= MAX_GRAMS:
             warnings.append(
                 ItemWarning(

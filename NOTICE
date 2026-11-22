@@ -1,7 +1,7 @@
 Remy
 Copyright (c) 2026 Constantin. Released under the MIT licence (see LICENSE).
 
-The code is MIT-licensed. Datasets bundled with or fetched by Remy keep their own licences:
+The code is MIT-licensed. Datasets bundled with Remy keep their own licences:
 
 Ciqual 2020 food composition table
   Source: ANSES, "Table de composition nutritionnelle des aliments Ciqual 2020"
@@ -10,10 +10,3 @@ Ciqual 2020 food composition table
   Redistribution and reuse are allowed provided the source is credited. Remy embeds a reduced extract
   (energy, protein, carbohydrates, fat, sugars, fibre, salt per 100 g); the values are ANSES's, the extract
   format is Remy's.
-
-Open Food Facts (looked up by barcode at run time, not bundled)
-  Source: Open Food Facts contributors, https://world.openfoodfacts.org/
-  Licence: Open Database License (ODbL) 1.0, https://opendatacommons.org/licenses/odbl/1-0/ ;
-  individual contents under the Database Contents License 1.0; product images under CC BY-SA 3.0 (Remy fetches
-  no images). The service caches the products it looks up in its own database (table off_products): that cache
-  is a derivative database and stays under ODbL. Responses for these foods carry an attribution to show.

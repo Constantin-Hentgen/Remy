@@ -4,46 +4,19 @@ It returns the same pydantic models the service uses, so a bot gets typed object
 
     from remy.client import RemyClient
 
-    with RemyClient("http://remy:8000", api_key="remy_...") as remy:
+    with RemyClient("http://remy:8000", api_key="...") as remy:
         candidates = remy.foods("riz blanc cuit")
-        logged = remy.log_meal("Riz poulet", items=[{"food_code": "9104", "grams": 200}])
-        if logged.possible_duplicate:
-            ...  # the client decides: keep both, or remy.delete_meal(logged.meal.id)
-        day = remy.day("today")
+        meal = remy.nutrients([{"food_code": "9104", "grams": 200}])
 """
 
-import datetime
-from typing import Any, Literal, Self
+from typing import Any, Self
 
 import httpx
 
 from remy.foods import Lang
 from remy.nutrients import MealComputation, MealItemIn
-from remy.schemas import (
-    BobImportReport,
-    CheckSlot,
-    CheckStatus,
-    DayOut,
-    FoodOut,
-    FoodSearchOut,
-    MealIn,
-    MealLogged,
-    MealOut,
-    MealPatch,
-    NutrientsIn,
-    ProfileIn,
-    ProfileOut,
-    RecipeIn,
-    RecipeOut,
-    RecipeSaved,
-    SlotCheckIn,
-    SlotCheckOut,
-    WeekOut,
-    WorkoutIn,
-    WorkoutOut,
-)
+from remy.schemas import FoodSearchOut, NutrientsIn
 
-DateLike = datetime.date | Literal["today", "yesterday"] | str
 DEFAULT_TIMEOUT = 10.0
 
 
@@ -54,10 +27,6 @@ class RemyError(Exception):
         super().__init__(f"HTTP {status_code}: {detail}")
         self.status_code = status_code
         self.detail = detail
-
-
-def _day(value: DateLike) -> str:
-    return value.isoformat() if isinstance(value, datetime.date) else value
 
 
 def _json(model: Any, **kwargs: Any) -> dict[str, Any]:
@@ -106,142 +75,12 @@ class RemyClient:
 
     # --- foods and nutrients ----------------------------------------------------------------------------------
 
-    def foods(
-        self,
-        q: str,
-        *,
-        lang: Lang | None = None,
-        limit: int = 5,
-        source: Literal["ciqual", "off", "recipe", "all"] = "ciqual",
-    ) -> FoodSearchOut:
-        """Candidate foods for a short description, best first (``source``: see the API)."""
-        params: dict[str, Any] = {"q": q, "limit": limit, "source": source}
-        if lang:
-            params["lang"] = lang
+    def foods(self, q: str, *, lang: Lang = "fr", limit: int = 5) -> FoodSearchOut:
+        """Candidate Ciqual foods for a short description, best first."""
+        params: dict[str, Any] = {"q": q, "limit": limit, "lang": lang}
         return FoodSearchOut.model_validate(self._request("GET", "/v1/foods", params=params))
 
-    def barcode(self, barcode: str, *, lang: Lang | None = None) -> FoodOut:
-        """A packaged product by barcode (Open Food Facts); use its ``code`` in meal items."""
-        return FoodOut.model_validate(
-            self._request("GET", f"/v1/foods/barcode/{barcode}", params={"lang": lang} if lang else {})
-        )
-
-    def nutrients(self, items: list[MealItemIn | dict[str, Any]], *, lang: Lang | None = None) -> MealComputation:
-        """Nutrients of ``[{food_code | food_query, grams}]``; nothing is stored."""
+    def nutrients(self, items: list[MealItemIn | dict[str, Any]], *, lang: Lang = "fr") -> MealComputation:
+        """Nutrients of ``[{food_code | food_query, grams}]``."""
         body = NutrientsIn(items=[MealItemIn.model_validate(i) for i in items], lang=lang)
         return MealComputation.model_validate(self._request("POST", "/v1/nutrients", json=_json(body)))
-
-    # --- recipes ----------------------------------------------------------------------------------------------
-
-    def save_recipe(
-        self,
-        name: str,
-        items: list[MealItemIn | dict[str, Any]],
-        *,
-        portions: float = 1,
-        yield_g: float | None = None,
-        external_id: str | None = None,
-    ) -> RecipeSaved:
-        """Create a recipe, or replace the one pushed earlier under the same ``external_id``."""
-        body = RecipeIn(
-            name=name,
-            items=[MealItemIn.model_validate(i) for i in items],
-            portions=portions,
-            yield_g=yield_g,
-            external_id=external_id,
-        )
-        return RecipeSaved.model_validate(self._request("POST", "/v1/me/recipes", json=_json(body)))
-
-    def recipes(self, *, external_id: str | None = None) -> list[RecipeOut]:
-        params = {"external_id": external_id} if external_id else {}
-        return [RecipeOut.model_validate(r) for r in self._request("GET", "/v1/me/recipes", params=params)]
-
-    def recipe(self, recipe_id: int) -> RecipeOut:
-        return RecipeOut.model_validate(self._request("GET", f"/v1/me/recipes/{recipe_id}"))
-
-    def delete_recipe(self, recipe_id: int) -> RecipeOut:
-        return RecipeOut.model_validate(self._request("DELETE", f"/v1/me/recipes/{recipe_id}"))
-
-    # --- profile ----------------------------------------------------------------------------------------------
-
-    def profile(self) -> ProfileOut:
-        return ProfileOut.model_validate(self._request("GET", "/v1/me/profile"))
-
-    def put_profile(self, profile: ProfileIn) -> ProfileOut:
-        """Replace the profile: fields left out are cleared."""
-        return ProfileOut.model_validate(self._request("PUT", "/v1/me/profile", json=_json(profile)))
-
-    def patch_profile(self, **fields: Any) -> ProfileOut:
-        """Change only the fields given, e.g. ``patch_profile(weight_kg=71)``. ``None`` clears a field."""
-        body = _json(ProfileIn(**fields), include=set(fields))
-        return ProfileOut.model_validate(self._request("PATCH", "/v1/me/profile", json=body))
-
-    # --- meals ------------------------------------------------------------------------------------------------
-
-    def log_meal(self, text: str, **fields: Any) -> MealLogged:
-        """Log a meal: ``log_meal("Pâtes au thon", at=..., items=[...], source="bob", repeat=False)``."""
-        meal = MealIn(text=text, **fields)
-        return MealLogged.model_validate(self._request("POST", "/v1/me/meals", json=_json(meal, exclude_none=True)))
-
-    def meals(self, start: DateLike | None = None, end: DateLike | None = None) -> list[MealOut]:
-        """Meals between two local dates, inclusive (default: today)."""
-        params = {k: _day(v) for k, v in (("from", start), ("to", end)) if v}
-        return [MealOut.model_validate(m) for m in self._request("GET", "/v1/me/meals", params=params)]
-
-    def meal(self, meal_id: int) -> MealOut:
-        return MealOut.model_validate(self._request("GET", f"/v1/me/meals/{meal_id}"))
-
-    def patch_meal(self, meal_id: int, **fields: Any) -> MealLogged:
-        """Correct a meal; sending ``items`` recomputes its nutrients."""
-        body = _json(MealPatch(**fields), include=set(fields))
-        return MealLogged.model_validate(self._request("PATCH", f"/v1/me/meals/{meal_id}", json=body))
-
-    def delete_meal(self, meal_id: int) -> MealOut:
-        """Remove a meal; returns what was removed."""
-        return MealOut.model_validate(self._request("DELETE", f"/v1/me/meals/{meal_id}"))
-
-    # --- workouts ---------------------------------------------------------------------------------------------
-
-    def add_workout(self, **fields: Any) -> WorkoutOut:
-        """Record a workout. With ``external_id``, sending it again updates the stored one."""
-        body = _json(WorkoutIn(**fields), exclude_none=True)
-        return WorkoutOut.model_validate(self._request("POST", "/v1/me/workouts", json=body))
-
-    def workouts(self, start: DateLike | None = None, end: DateLike | None = None) -> list[WorkoutOut]:
-        params = {k: _day(v) for k, v in (("from", start), ("to", end)) if v}
-        return [WorkoutOut.model_validate(w) for w in self._request("GET", "/v1/me/workouts", params=params)]
-
-    def delete_workout(self, workout_id: int) -> WorkoutOut:
-        return WorkoutOut.model_validate(self._request("DELETE", f"/v1/me/workouts/{workout_id}"))
-
-    # --- days, weeks, slot checks -----------------------------------------------------------------------------
-
-    def day(self, date: DateLike = "today", *, lang: Lang | None = None) -> DayOut:
-        """Totals, needs, balance, macros against their ranges, log issues and anomalies of one day."""
-        return DayOut.model_validate(self._request("GET", f"/v1/me/days/{_day(date)}", params=_lang(lang)))
-
-    def week(self, date: DateLike = "yesterday", *, lang: Lang | None = None) -> WeekOut:
-        """The 7 days ending on ``date`` (inclusive)."""
-        return WeekOut.model_validate(self._request("GET", f"/v1/me/weeks/{_day(date)}", params=_lang(lang)))
-
-    def slot_check(self, date: DateLike, slot: CheckSlot) -> SlotCheckOut:
-        """Whether the client already asked about this slot (``status`` is None if not)."""
-        return SlotCheckOut.model_validate(self._request("GET", f"/v1/me/slot-checks/{_day(date)}/{slot}"))
-
-    def set_slot_check(self, date: DateLike, slot: CheckSlot, status: CheckStatus) -> SlotCheckOut:
-        body = _json(SlotCheckIn(status=status))
-        return SlotCheckOut.model_validate(self._request("PUT", f"/v1/me/slot-checks/{_day(date)}/{slot}", json=body))
-
-    # --- import -----------------------------------------------------------------------------------------------
-
-    def import_bob(self, state: dict[str, Any], *, dry_run: bool = False) -> BobImportReport:
-        """Import Bob's state file (its parsed JSON): meal log, profile and meal checks. Safe to repeat."""
-        params = {"dry_run": "true"} if dry_run else {}
-        return BobImportReport.model_validate(self._request("POST", "/v1/me/import/bob", json=state, params=params))
-
-
-def _lang(lang: Lang | None) -> dict[str, str]:
-    return {"lang": lang} if lang else {}
-
-
-__all__ = ["RemyClient", "RemyError"]

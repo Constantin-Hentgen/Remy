@@ -1,20 +1,20 @@
 [project]
 name = "remy"
 version = "0.6.0"
-description = "Self-hosted nutrition tracking for endurance athletes: food lookup, meal log and energy balance against training."
+description = "Self-hosted, stateless nutrition service for endurance athletes: recipe ideas from what you have, with real nutrients from Ciqual."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.13"
 authors = [{ name = "Remy contributors" }]
-keywords = ["nutrition", "ciqual", "endurance", "running", "energy-balance", "fastapi"]
+keywords = ["nutrition", "ciqual", "endurance", "running", "recipes", "fastapi"]
 classifiers = [
     "Programming Language :: Python :: 3.13",
     "Framework :: FastAPI",
     "Topic :: Scientific/Engineering",
 ]
-# The library core (food search, nutrient computation, energy needs, anomaly detection) depends on nothing
-# heavier than pydantic, so clients can embed it. The HTTP service lives behind the `server` extra.
+# The library core (food search, nutrient computation) depends on nothing heavier than pydantic, so clients can
+# embed it. The HTTP service lives behind the `server` extra.
 dependencies = [
     "pydantic>=2.9",
 ]
@@ -24,13 +24,6 @@ server = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
     "pydantic-settings>=2.6",
-    "sqlalchemy>=2.0.36",
-    "alembic>=1.14",
-    "tzdata",
-    "httpx>=0.27",
-]
-postgres = [
-    "psycopg[binary]>=3.2",
 ]
 client = [
     "httpx>=0.27",
