@@ -25,3 +25,12 @@ def test_errors_raise(app):
     with RemyClient(api_key="wrong", http=TestClient(app)) as client, pytest.raises(RemyError) as e:
         client.foods("riz")
     assert e.value.status_code == 401
+
+
+def test_suggest(remy, app):
+    from tests.test_suggest import FakeChef
+
+    app.state.chef = FakeChef()
+    out = remy.suggest("riz, oeufs", meal="dinner", servings=2, count=1, target={"kcal": 700})
+    assert len(out.recipes) == 1 and out.recipes[0].per_serving.kcal > 0 and out.target.kcal == 700
+    assert app.state.chef.requests[0].meal == "dinner"

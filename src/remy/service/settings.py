@@ -17,6 +17,11 @@ class Settings(BaseSettings):
         default=None,
         description="Bearer key every /v1 call must send. Unset: /v1 refuses every call (401).",
     )
+    anthropic_api_key: SecretStr | None = Field(
+        default=None,
+        description="Anthropic API key for recipe suggestions. Unset: POST /v1/suggest answers 503.",
+    )
+    remy_model: str = Field(default="claude-opus-5-5", description="Claude model that drafts the recipes.")
     log_level: str = Field(default="INFO", description="Python logging level: DEBUG, INFO, WARNING, ERROR.")
 
 

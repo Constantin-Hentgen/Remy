@@ -5,6 +5,7 @@ It returns the same pydantic models the service uses, so a bot gets typed object
     from remy.client import RemyClient
 
     with RemyClient("http://remy:8000", api_key="...") as remy:
+        ideas = remy.suggest("4 oeufs, riz, épinards, feta", meal="dinner", servings=2)
         candidates = remy.foods("riz blanc cuit")
         meal = remy.nutrients([{"food_code": "9104", "grams": 200}])
 """
@@ -16,8 +17,10 @@ import httpx
 from remy.foods import Lang
 from remy.nutrients import MealComputation, MealItemIn
 from remy.schemas import FoodSearchOut, NutrientsIn
+from remy.suggestions import SuggestIn, SuggestOut
 
-DEFAULT_TIMEOUT = 10.0
+DEFAULT_TIMEOUT = 180.0
+"""Suggestions wait for the model, which can take a minute."""
 
 
 class RemyError(Exception):
@@ -84,3 +87,11 @@ class RemyClient:
         """Nutrients of ``[{food_code | food_query, grams}]``."""
         body = NutrientsIn(items=[MealItemIn.model_validate(i) for i in items], lang=lang)
         return MealComputation.model_validate(self._request("POST", "/v1/nutrients", json=_json(body)))
+
+    # --- suggestions ------------------------------------------------------------------------------------------
+
+    def suggest(self, pantry: str, **options: Any) -> SuggestOut:
+        """Recipes from what is on hand. ``options``: the other fields of :class:`SuggestIn` (meal, servings, count,
+        target, notes, pantry_only, lang)."""
+        body = SuggestIn(pantry=pantry, **options)
+        return SuggestOut.model_validate(self._request("POST", "/v1/suggest", json=_json(body, exclude_none=True)))

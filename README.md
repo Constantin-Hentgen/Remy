@@ -2,43 +2,36 @@
 
 Named after Remy, the rat chef of *Ratatouille*, who knows exactly what goes into every dish.
 
-**Self-hosted nutrition tracking for endurance athletes.** Remy looks foods up in an open composition table
-(Ciqual), computes the nutrients of a meal, keeps a per-user meal log and profile, and computes the daily
-**energy balance against training**: intake vs basal metabolism × daily activity + the calories of the day's
-workouts. It flags log inconsistencies (a dish logged twice, a missing lunch) and nutrition anomalies (too little
-protein, low carbs on a run day).
+**A stateless nutrition service for endurance athletes.** Tell Remy what you have to cook; it suggests recipes,
+with the nutrients of each one computed from an open composition table (Ciqual 2020, ANSES). Nothing is stored:
+no account, no meal log, no tracking.
 
-It is **deterministic: there is no LLM inside.** Clients, such as a chat bot, turn free text into structured items
-(`[{food, grams}]`); Remy returns candidate foods, computes, stores and flags. It never guesses.
-
-Use it as a **Python library** (the pure computation core) or as an **HTTP service** (FastAPI, SQLite by default).
-
-> Status: early development; see the [project board](https://github.com/users/Constantin-Hentgen/projects/15).
+- `POST /v1/suggest`: Claude drafts the recipes from your pantry, meal, servings, target and notes. The numbers are
+  never the model's: Remy computes them from Ciqual, and lists any ingredient it could not count.
+- `GET /v1/foods` and `POST /v1/nutrients`: Ciqual food search and nutrient computation, without any model.
 
 ## Quick start
 
 ```sh
-cp .env.example .env          # optional: every variable has a default
+cp .env.example .env      # set REMY_API_KEY and ANTHROPIC_API_KEY
 docker compose up -d
-curl http://localhost:18100/health
-
-# create a user; the API key is printed once
-docker compose exec remy remy user create alice --timezone Europe/Paris
-
-curl -H "Authorization: Bearer $KEY" "http://localhost:18100/v1/foods?q=riz+blanc+cuit"
+curl -s -X POST http://localhost:18100/v1/suggest \
+  -H "Authorization: Bearer $REMY_API_KEY" -H "Content-Type: application/json" \
+  -d '{"pantry": "4 oeufs, riz, épinards, feta", "meal": "dinner", "servings": 2, "notes": "sortie longue demain"}'
 ```
 
-Interactive API docs are served at `/docs`. From Python, install the `client` extra and use the typed client:
+From a terminal, without the service: `ANTHROPIC_API_KEY=… remy suggest "4 eggs, rice, spinach" --lang en`.
+From Python, install the `client` extra:
 
 ```python
 from remy.client import RemyClient
 
-with RemyClient("http://localhost:18100", api_key=KEY) as remy:
-    remy.log_meal("Riz poulet", items=[{"food_query": "riz blanc cuit", "grams": 200}])
-    print(remy.day("today").balance_kcal)
+with RemyClient("http://localhost:18100", api_key=REMY_API_KEY) as remy:
+    for recipe in remy.suggest("4 oeufs, riz, épinards", meal="dinner", servings=2).recipes:
+        print(recipe.name, recipe.per_serving.kcal)
 ```
 
-For development:
+Interactive API docs are served at `/docs`. For development:
 
 ```sh
 uv sync
@@ -48,11 +41,10 @@ uv run --frozen ruff check && uv run --frozen ruff format --check
 
 ## Documentation
 
-Everything else (configuration, API, data sources, integration with clients) is in the
-**[wiki](https://github.com/Constantin-Hentgen/Remy/wiki)**.
+Configuration, the API and data sources are in the **[wiki](https://github.com/Constantin-Hentgen/Remy/wiki)**.
 
 ## Licence and data
 
 Code: [MIT](LICENSE). Food composition data: **Ciqual 2020 © ANSES**, under the
-[Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/). Open Food Facts data
-(planned) is under the [ODbL](https://opendatacommons.org/licenses/odbl/1-0/). Details in [NOTICE](NOTICE).
+[Licence Ouverte / Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/). Details in [NOTICE](NOTICE).
+Suggestions send each request's pantry, meal, servings, target and notes to Anthropic; nothing else.

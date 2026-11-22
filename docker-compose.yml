@@ -9,6 +9,8 @@ services:
     # stack UI. A missing variable arrives empty and takes the code default (see .env.example).
     environment:
       REMY_API_KEY: ${REMY_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      REMY_MODEL: ${REMY_MODEL:-}
       LOG_LEVEL: ${LOG_LEVEL:-}
     ports:
       - "${REMY_PORT:-18100}:8000"
